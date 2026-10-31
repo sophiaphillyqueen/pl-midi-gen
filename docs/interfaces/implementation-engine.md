@@ -195,7 +195,13 @@ Behavior:
 
 Return:
 
-- The actual pitch of the newly sounding note.
+- A fresh hashref containing:
+  - `on` — The actual pitch of the newly sounding note, expressed
+    in semitones relative to C4.
+  - `ref` — The MIDI reference pitch (home note) selected for the
+    newly sounding note, expressed in semitones relative to C4.
+  - `bend` — The initial pitch-bend offset, expressed in semitones
+    relative to the MIDI reference pitch (`on` minus `ref`).
 
 
 ### note_off($voice)
@@ -281,6 +287,28 @@ In either case:
 - `set_pitch()` reports both selected and sounding pitches
   when a note is active.
 - The next `note_on()` may establish a new reference pitch.
+
+### Anchor stability of a sounding note
+
+When `note_on()` starts a note on a voice, the implementation must select
+the MIDI reference note whose pitch is closest to the voice's selected
+pitch at the moment `note_on()` is called, among those MIDI notes
+from which the selected pitch can be reached using the configured
+pitch-bend limits.
+
+Once established, the reference pitch must remain unchanged for the
+entire duration of that sounding note, regardless of subsequent calls
+to `set_pitch()`.
+
+This requirement applies even when `set_pitch()` is called immediately
+after `note_on()`, without any intervening call to `ticks_forward()`.
+
+Subsequent pitch changes must be accomplished through pitch-bending
+relative to the established reference pitch, subject to the configured
+bending limits, rather than by selecting a new reference pitch.
+
+A new reference pitch may be established only when a subsequent
+`note_on()` starts a new note on that voice.
 
 
 ## 7. Implementation Independence
