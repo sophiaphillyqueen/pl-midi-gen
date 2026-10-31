@@ -195,7 +195,9 @@ Behavior:
 
 Return:
 
-- A fresh hashref containing:
+- On failure, return a fresh, empty hashref (`{}`).
+
+- On success, a fresh hashref containing:
   - `on` — The actual pitch of the newly sounding note, expressed
     in semitones relative to C4.
   - `ref` — The MIDI reference pitch (home note) selected for the

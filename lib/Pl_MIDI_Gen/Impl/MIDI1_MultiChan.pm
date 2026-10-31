@@ -469,14 +469,14 @@ sub note_on {
 
   if ( !defined($lc_voice) || ref($lc_options) ne 'HASH' )
   {
-    return undef;
+    return {};
   }
 
   $lc_velocity = $lc_options->{'vel'};
   if ( !_number($lc_velocity) || $lc_velocity !~ /\A\d+\z/ ||
        $lc_velocity < 1 || $lc_velocity > 127 )
   {
-    return undef;
+    return {};
   }
 
   $lc_pitch = $lc_voice->{'set'};
@@ -485,7 +485,7 @@ sub note_on {
   {
     $lc_reference = $this->_reference($lc_pitch);
   }
-  if ( !defined($lc_reference) ) { return undef; }
+  if ( !defined($lc_reference) ) { return {}; }
 
   # All validation is complete before replacing any active note
   $this->_stop($lc_voice);
@@ -499,8 +499,12 @@ sub note_on {
   $lc_status = 0x90 | $lc_voice->{'channel'};
   $this->_emit(pack('C3', $lc_status, $lc_reference, $lc_velocity));
   $lc_voice->{'on'} = $lc_pitch;
-
-  return $lc_pitch;
+  
+  return {
+    'on'   => $lc_pitch,
+    'ref'  => $lc_reference - 60,
+    'bend' => $lc_pitch - ($lc_reference - 60),
+  };
 }
 
 
