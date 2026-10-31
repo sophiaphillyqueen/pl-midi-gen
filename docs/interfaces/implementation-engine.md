@@ -101,10 +101,11 @@ Returns a fresh hashref containing:
 | Key | Meaning |
 |---|---|
 | `max_voices` | Maximum supported independent voices |
-| `fractional_pitch` | Supports noninteger pitches |
-| `continuous_pitch` | Supports changing a sounding note's pitch |
+| `fractional_pitch` | Supports noninteger selected pitches for individual voices |
+| `continuous_pitch` | Supports changing an individual sounding voice's pitch independently of other voices |
 | `ind_same_pitch` | Supports independently controlled voices sounding the same pitch |
-| `extension` | Recommended output filename extension, without a leading period |
+| `global_bend` | Supports applying a common pitch offset to all voices |
+| `extension` | Correct output filename extension, without a leading period |
 
 The returned structure must be independent of internal storage,
 including any nested mutable structures.
