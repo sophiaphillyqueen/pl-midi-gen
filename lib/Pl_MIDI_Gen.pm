@@ -50,7 +50,7 @@ sub new {
     $initialized = 1;
   }
 
-  return bless( {}, __PACKAGE__ );
+  return bless( {}, ( ref($this) || $this ) );
 }
 
 
