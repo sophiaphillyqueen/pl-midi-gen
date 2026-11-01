@@ -154,8 +154,10 @@ Behavior:
 - If continuous pitch changes are enabled, attempt to bend
   the sounding note toward the selected pitch.
 - Apply `bend_prt` if the requested pitch cannot be reached.
-- If fractional pitches are unavailable, use an integer
-  pitch supported by the implementation.
+- If fractional pitches are unavailable, round the
+  requested pitch to the
+  nearest integer, with exact half-integer
+  values rounded away from zero.
 
 Return:
 
