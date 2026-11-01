@@ -44,6 +44,9 @@ General options established so far:
 | `bend_up` | Upward pitch-bend range in semitones |
 | `bend_down` | Downward pitch-bend range in semitones |
 | `bend_prt` | Whether out-of-range bends proceed partway |
+| `gbend_up` | Global upward pitch-bend range in semitones |
+| `gbend_down` | Global downward pitch-bend range in semitones |
+| `gbend_prt` | Whether out-of-range global bends proceed partway |
 | `engopt` | Optional hashref of engine-specific options |
 
 Both `bend_up` and `bend_down` must be supplied to enable
@@ -176,6 +179,42 @@ The values may differ.
 
 The returned hashref is disposable and must not expose mutable
 internal engine state.
+
+
+### global($offset)
+
+This method can query and/or set the global offset
+if global pitch-bending is enabled. At the time of
+the object's construction, the global offset
+is set to `0`.
+However, when the object's `end()` method is called,
+whatever value the global offset has is preserved.
+
+Argument:
+
+- `$offset` — Optional requested global pitch offset, in semitones.
+
+Behavior:
+
+- The global offset applies equally to all sounding voices.
+- When called without an argument, leave the global offset unchanged.
+- When called with an argument, attempt to set the global offset
+  to the requested value.
+- The global offset does not change any voice's selected pitch,
+  reference pitch, or independently reported sounding pitch.
+- An explicitly supplied zero is treated as a request to set
+  the global offset to zero.
+
+Return:
+
+- If the implementation does not support global pitch-bending,
+  or the required global bend range was not supplied to the
+  constructor, return a fresh, empty hashref (`{}`).
+- Otherwise, return a fresh hashref containing:
+  - `was` — The global pitch offset before the operation.
+  - `now` — The global pitch offset after the operation.
+- When called without an argument, `was` and `now` will
+  inevitably be equal.
 
 
 ### note_on($voice, \%options)
