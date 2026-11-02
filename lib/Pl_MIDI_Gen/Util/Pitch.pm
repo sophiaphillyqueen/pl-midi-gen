@@ -3,24 +3,6 @@ package Pl_MIDI_Gen::Util::Pitch;
 use strict;
 use warnings;
 
-sub new
-{
-  # Construct a pitch-conversion utility through the bartender.
-  # No engine or instrument state is required.
-
-  my $this;
-  my $lc_bartender;
-
-  $this = shift(@_);
-  $lc_bartender = shift(@_);
-
-  if ( !defined($lc_bartender) || !ref($lc_bartender) )
-  {
-    return undef;
-  }
-
-  return bless({}, __PACKAGE__);
-}
 
 sub note_to_pitch
 {

@@ -5,6 +5,7 @@ use warnings;
 
 use Cwd qw(abs_path);
 use Scalar::Util qw(blessed);
+use File::Basename qw(dirname);
 
 # All state belongs to the class, not to an individual
 # bartender object.
@@ -137,6 +138,32 @@ sub fsplug {
   # Constructor exceptions are intentionally not intercepted.
 
   my $this;
+  my $lc_rawf; # Raw filename
+  my $lc_modu; # Module name
+
+  $this = shift(@_);
+  $lc_rawf = shift(@_);
+  $lc_modu = $this->fscplug($lc_rawf);
+  
+  # Now return if the loading failed:
+  if ( !defined($lc_modu) ) { return undef; }
+  return ( $lc_modu->new($this,@_) );
+}
+
+
+
+sub fscplug {
+  # Load an external plug-in file and return its generated package
+  # name without constructing an object.
+  #
+  # Existing blessed objects can also identify their own classes.
+  # Canonical filenames share the same package registry as fsplug(),
+  # so neither method evaluates a successfully loaded file twice.
+  #
+  # Failed evaluations consume assigned package numbers but are not
+  # registered, allowing the file to be corrected and loaded again.
+
+  my $this;
   my $lc_plugin;
   my $lc_package;
   my $lc_filename;
@@ -144,6 +171,7 @@ sub fsplug {
   my $lc_source;
   my $lc_code;
   my $lc_load_error;
+  my $lc_dirname;
 
   $this = shift(@_);
 
@@ -153,23 +181,20 @@ sub fsplug {
 
   if ( !defined($lc_plugin) ) { return undef; }
 
-  # First determine whether the caller supplied an existing
-  # blessed object rather than a filename.
-  #
-  # Such an object already identifies a loaded package, so
-  # no filename resolution or registry lookup is needed.
+  # A blessed object already identifies a loaded class, without
+  # requiring a constructor call or any file processing.
   $lc_package = blessed($lc_plugin);
 
   if ( defined($lc_package) )
   {
-    return $lc_package->new($this, @_);
+    return $lc_package;
   }
 
   # Other references are not valid filenames.
   if ( ref($lc_plugin) ) { return undef; }
 
-  # Resolve the supplied filename into its canonical form,
-  # accounting for relative paths and symbolic links.
+  # Resolve relative paths and symbolic links to the same
+  # canonical filename used by fsplug().
   $lc_filename = abs_path($lc_plugin);
 
   if ( !defined($lc_filename) || !-f $lc_filename )
@@ -177,22 +202,19 @@ sub fsplug {
     return undef;
   }
 
-  # If this file was loaded previously, use its registered
-  # package without executing its source again.
+  # If the file is already registered, return its package name
+  # without evaluating the source again.
   if ( exists($external_packages{$lc_filename}) )
   {
-    $lc_package = $external_packages{$lc_filename};
-
-    return $lc_package->new($this, @_);
+    return $external_packages{$lc_filename};
   }
 
-  # Open the plug-in source file for reading.
+  # Read the entire source file before attempting compilation.
   if ( !open($lc_fh, '<:raw', $lc_filename) )
   {
     return undef;
   }
 
-  # Read the entire source file into a single scalar.
   {
     local $/;
     $lc_source = <$lc_fh>;
@@ -203,28 +225,29 @@ sub fsplug {
     return undef;
   }
 
-  # Assign the next package name.
-  #
-  # Increment the counter before compilation so that a
-  # failed attempt cannot reuse a potentially contaminated
-  # package namespace.
+  # Allocate a new package before evaluation, so a failed eval
+  # cannot lead to a reused, partially populated namespace.
   $lc_package = $external_namespace . '::a_' . $next_external_number . '_z';
 
   $next_external_number = int($next_external_number + 1.2);
 
-  # External plug-ins must not contain their own package
-  # declarations.
-  #
-  # Prepend our generated package declaration to the code.
-  $lc_code = 'package ' . $lc_package . ";\n" . $lc_source;
+  # Make the original filename available to the plug-in.
+  $lc_dirname = dirname($lc_filename);
+  {
+    no strict 'refs';
+    ${"${lc_package}::PLUGIN_FILENAME"} = $lc_filename;
+    ${"${lc_package}::PLUGIN_DIRNAME"} = $lc_dirname;
+    ${"${lc_package}::PLUGINS_BAR"} = $this;
+  }
 
-  # Evaluate the assembled Perl source.
-  #
-  # Do not impose this module's lexical strictness or warning
-  # settings on the external source; the plug-in may establish
-  # its own settings.
-  #
-  # Capture the evaluation error immediately.
+  # Compensate for the generated package declaration.
+  $lc_code = 'package ' . $lc_package . ";\n"
+           . "#line 1\n"
+           . $lc_source;
+
+  # Preserve fsplug()'s evaluation behavior, including a source's
+  # own choice of strictness and warnings; check $@ instead of
+  # the eval's return value, which need not be true.
   {
     no strict;
     no warnings;
@@ -233,17 +256,58 @@ sub fsplug {
     $lc_load_error = $@;
   }
 
-  # A successful evaluation need not return a true value,
-  # so use the evaluation error rather than its return value.
   if ( $lc_load_error ne '' ) { return undef; }
 
-  # The source loaded successfully, so record its package
-  # against the canonical filename.
+  # Only successful compilation enters the shared registry.
   $external_packages{$lc_filename} = $lc_package;
 
-  # Finally, construct the plug-in object outside eval.
-  # Any exception here belongs to the plug-in itself.
-  return $lc_package->new($this, @_);
+  return $lc_package;
+}
+
+
+sub ourcls {
+  # Load a class from the Pl_MIDI_Gen namespace without
+  # constructing an object.
+  #
+  # The argument is a package name relative to Pl_MIDI_Gen.
+  # Return the fully qualified class name on success, or
+  # undef if validation or loading fails.
+  #
+  # Perl's require mechanism uses %INC to avoid loading
+  # the same module more than once.
+
+  my $this;
+  my $lc_pack;
+  my $lc_fpack;
+  my $lc_loaded;
+
+  $this = shift(@_);
+
+  if ( !$initialized ) { return undef; }
+  if ( scalar(@_) != 1 ) { return undef; }
+
+  $lc_pack = shift(@_);
+
+  if ( !defined($lc_pack) || ref($lc_pack) )
+  {
+    return undef;
+  }
+
+  # Construct the fully qualified class name.
+  $lc_fpack = __PACKAGE__ . '::' . $lc_pack;
+
+  # Validate the name before using it in an eval string.
+  if ( $lc_fpack !~ /\A[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)*\z/ )
+  {
+    return undef;
+  }
+
+  # Load the module without invoking its constructor.
+  $lc_loaded = eval("require $lc_fpack; 1;");
+
+  if ( !$lc_loaded ) { return undef; }
+
+  return $lc_fpack;
 }
 
 
