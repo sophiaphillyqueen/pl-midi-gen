@@ -335,13 +335,23 @@ sub set_pitch
   $lc_wanted = shift(@_);
   $lc_voice = $this->_voice($lc_number);
 
-  if ( !defined($lc_voice) || !_number($lc_wanted) ||
-       $lc_wanted < -60 || $lc_wanted > 67 )
+  # A nonexistent voice has no selected pitch to report.
+  if ( !defined($lc_voice) ) { return {}; }
+
+  # Invalid pitch values leave the existing selection unchanged.
+  # Numeric requests are limited to the MIDI 0-127 note range.
+  if ( _number($lc_wanted) )
   {
-    return {};
+    if ( $lc_wanted < -60 )
+    {
+      $lc_voice->{'set'} = -60;
+    } elsif ( $lc_wanted > 67 ) {
+      $lc_voice->{'set'} = 67;
+    } else {
+      $lc_voice->{'set'} = _round($lc_wanted);
+    }
   }
 
-  $lc_voice->{'set'} = _round($lc_wanted);
   $lc_result = { 'set' => $lc_voice->{'set'} };
 
   if ( defined($lc_voice->{'on'}) )
