@@ -48,6 +48,7 @@ General options established so far:
 | `gbend_down` | Global downward pitch-bend range in semitones |
 | `gbend_prt` | Whether out-of-range global bends proceed partway |
 | `engopt` | Optional hashref of engine-specific options |
+| `tpb` | The number of ticks per beat. (The default is 480.) |
 
 Both `bend_up` and `bend_down` must be supplied to enable
 fractional-pitch functionality.
@@ -177,8 +178,15 @@ The `on` key is present only when the voice is sounding.
 
 The values may differ.
 
-The returned hashref is disposable and must not expose mutable
-internal engine state.
+If the call fails because the `$voice` argument
+specifies a non-existent voice, then this method
+will return an empty hashref.
+
+In _any_ case, no matter _how_ the call to this method
+goes (whether it be a success or a failure) this method
+will return a hashref that references a freshly-created
+hash and which doesn't give the calling program any access
+by which to alter the internal state of the engine.
 
 
 ### global($offset)

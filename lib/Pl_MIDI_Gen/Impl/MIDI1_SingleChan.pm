@@ -3,10 +3,14 @@ package Pl_MIDI_Gen::Impl::MIDI1_SingleChan;
 use strict;
 use warnings;
 
-# Standard MIDI File format 1, one track, 480 ticks per quarter note.
-# All voices share MIDI channel 1 (status-byte channel index zero).
-# Selected voice pitches are integral; only the global bend can change
-# the sounding pitches without retriggering their MIDI notes.
+# Standard MIDI File format 1, one track,
+# configurable ticks per quarter note (280 default).
+# All voices share MIDI channel 1 (status-byte
+# channel index zero).
+# Selected voice pitches are integral;
+# only the global bend can change
+# the sounding pitches without
+# retriggering their MIDI notes.
 
 sub capabilities
 {
@@ -187,6 +191,7 @@ sub new
   my $lc_bartender;
   my $lc_pitches;
   my $lc_options;
+  my $lc_tpb;
   my $lc_global_enabled;
   my $lc_up;
   my $lc_down;
@@ -209,6 +214,22 @@ sub new
        ref($lc_options->{'engopt'}) ne 'HASH' )
   {
     return undef;
+  }
+
+  # Use the framework's default resolution unless the
+  # caller supplies a valid override.
+  $lc_tpb = 480;
+
+  if ( exists($lc_options->{'tpb'}) )
+  {
+    $lc_tpb = $lc_options->{'tpb'};
+
+    if ( !_number($lc_tpb) ||
+         $lc_tpb !~ /\A[0-9]+\z/ ||
+         $lc_tpb < 1 || $lc_tpb > 32767 )
+    {
+      return undef;
+    }
   }
 
   $lc_global_enabled = 0;
@@ -259,6 +280,7 @@ sub new
   $this = bless({
     'bartender'      => $lc_bartender,
     'tick'           => 0,
+    'tpb'            => $lc_tpb,
     'events'         => [],
     'voices'         => \@lc_voices,
     'active'         => {},
@@ -486,7 +508,7 @@ sub end
     $lc_previous = $lc_event->[0];
   }
 
-  $lc_header = 'MThd' . pack('Nnnn', 6, 1, 1, 480);
+  $lc_header = 'MThd' . pack('Nnnn', 6, 1, 1, $this->{'tpb'});
   $lc_result = $lc_header . 'MTrk' . pack('N', length($lc_track)) . $lc_track;
 
   $this->{'tick'} = 0;
