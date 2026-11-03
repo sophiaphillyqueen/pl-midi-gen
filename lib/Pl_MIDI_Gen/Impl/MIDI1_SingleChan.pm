@@ -316,7 +316,7 @@ sub set_pitch
   if ( !defined($lc_voice) || !_number($lc_wanted) ||
        $lc_wanted < -60 || $lc_wanted > 67 )
   {
-    return undef;
+    return {};
   }
 
   $lc_voice->{'set'} = _round($lc_wanted);

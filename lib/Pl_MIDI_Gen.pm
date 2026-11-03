@@ -166,7 +166,8 @@ sub fscplug {
   my $this;
   my $lc_plugin;
   my $lc_package;
-  my $lc_filename;
+  my $lc_filename; # Name of file being loaded
+  my $lc_line_filename; # Version used in the line directive
   my $lc_fh;
   my $lc_source;
   my $lc_code;
@@ -240,9 +241,18 @@ sub fscplug {
     ${"${lc_package}::PLUGINS_BAR"} = $this;
   }
 
-  # Compensate for the generated package declaration.
+  # Use the original filename when safe; otherwise encode it.
+  # Never modify the original $lc_filename.
+  $lc_line_filename = $lc_filename;
+
+  if ( $lc_line_filename =~ /["\x00-\x1F\x7F]/ )
+  {
+    $lc_line_filename = unpack('H*', $lc_filename);
+  }
+
+  # Preserve original source line numbers in both cases.
   $lc_code = 'package ' . $lc_package . ";\n"
-           . "#line 1\n"
+           . '#line 1 "' . $lc_line_filename . '"' . "\n"
            . $lc_source;
 
   # Preserve fsplug()'s evaluation behavior, including a source's
