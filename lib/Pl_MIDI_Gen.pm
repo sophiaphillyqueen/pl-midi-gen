@@ -3,6 +3,8 @@ package Pl_MIDI_Gen;
 use strict;
 use warnings;
 
+our $VERSION = '0.01_00';
+
 use Cwd qw(abs_path);
 use Scalar::Util qw(blessed);
 use File::Basename qw(dirname);
@@ -366,6 +368,45 @@ sub note_to_pitch
   if ( $lc_accidental eq 'b' ) { $lc_pitch -= 1; }
 
   return $lc_pitch;
+}
+
+
+
+sub save_file
+{
+  # Save a binary scalar to a file, overwriting if necessary.
+  # Return a hashref with 'ok' indicating success or failure.
+  # The containing directory must already exist.
+
+  my $this;
+  my $lc_data;
+  my $lc_filename;
+  my $lc_fh;
+  my $lc_written;
+  my $lc_closed;
+
+  # Retrieve the object reference and the two arguments.
+  $this = shift(@_);
+  $lc_data = shift(@_);
+  $lc_filename = shift(@_);
+
+  # We cannot write undefined data.
+  if ( !defined($lc_data) ) { return { 'ok' => 0 }; }
+
+  # Open the destination for raw binary output.
+  # This also overwrites any existing file.
+  if ( !open($lc_fh, '>:raw', $lc_filename) ) { return { 'ok' => 0 }; }
+
+  # Write the data, then close the file.
+  # Check both operations for errors.
+  $lc_written = print {$lc_fh} $lc_data;
+  $lc_closed = close($lc_fh);
+
+  # Report failure if either operation failed.
+  if ( !$lc_written || !$lc_closed ) { return { 'ok' => 0 }; }
+
+  # Otherwise, the operation succeeded.
+  return { 'ok' => 1 };
 }
 
 
