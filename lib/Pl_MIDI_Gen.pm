@@ -426,4 +426,41 @@ sub save_file
 }
 
 
+sub fromcls
+{
+  # Construct a new object using either a package name
+  # or an existing object that identifies the class.
+  #
+  # The class must already be loaded.
+  # Constructor arguments receive the bartender first.
+  # Return undef for undefined input or uninitialized bartender.
+
+  my $this;
+  my $lc_source;
+  my $lc_package;
+
+  $this = shift(@_);
+
+  if ( !$initialized ) { return undef; }
+
+  $lc_source = shift(@_);
+
+  if ( !defined($lc_source) ) { return undef; }
+
+  # Determine whether we have an existing object.
+  $lc_package = blessed($lc_source);
+
+  if ( !defined($lc_package) )
+  {
+    # Reject references that are not blessed objects.
+    if ( ref($lc_source) ) { return undef; }
+
+    $lc_package = $lc_source;
+  }
+
+  # Construct a fresh instance of the identified class.
+  return $lc_package->new($this,@_);
+}
+
+
 1;
