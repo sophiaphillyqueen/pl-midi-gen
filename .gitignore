@@ -5,6 +5,13 @@
 /blib/
 /pm_to_blib
 
+# Generated packaging files
+/MANIFEST
+/MANIFEST.bak
+/Makefile.old
+/Pl_MIDI_Gen-*.tar.gz
+/Pl_MIDI_Gen-*/
+
 
 # macOS Finder metadata
 .DS_Store
