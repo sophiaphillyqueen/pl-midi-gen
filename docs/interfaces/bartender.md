@@ -70,6 +70,31 @@ individual bartender objects:
 
 ## Loading methods
 
+### `fromcls($class_or_object, @constructor_args)`
+
+Constructs a fresh object from an already-loaded class,
+identified either by its package name or by an existing
+blessed object.
+
+**Behavior:**
+
+- Requires bartender initialization
+- Accepts a package-name string or blessed object
+- Rejects undefined values and unblessed references
+- Does not attempt to load the class
+- Does not clone the supplied object
+- Passes the bartender as the first constructor argument
+- Forwards all remaining constructor arguments unchanged
+- Propagates constructor exceptions
+
+**Constructor invocation:**
+
+`$class->new($bartender, @constructor_args)`
+
+**Return:** Constructor result, or `undef` for invalid input
+
+---
+
 ### `fromus($short_package_name, @constructor_args)`
 
 Loads a module from the library's own `Pl_MIDI_Gen` namespace.
@@ -142,6 +167,36 @@ $package_name->new($bartender, @constructor_args)
 ```
 
 **Return:** Constructor result, or `undef` for validation or loading failure
+
+---
+
+### `fscplug($source)`
+
+Loads an external Perl source file and returns its generated
+package name **without constructing an object**, or returns the
+class name of an existing blessed object.
+
+**Behavior:**
+
+- Requires bartender initialization
+- Accepts a filename or an existing blessed object
+- Rejects undefined values and unblessed references
+- Resolves filenames to canonical absolute paths
+- Reuses previously loaded files through the shared registry
+- Evaluates previously unloaded source under a generated package
+- Returns `undef` on loading failure
+
+**Variables made available in generated packages:**
+
+| Variable | Meaning |
+|---|---|
+| `$PLUGIN_FILENAME` | Canonical pathname of the source file |
+| `$PLUGIN_DIRNAME` | Directory containing the source file |
+| `$PLUGINS_BAR` | Bartender object used for loading |
+
+Successfully loaded files are registered by canonical filename,
+while failed evaluations consume a package number without
+registering the file.
 
 ---
 
@@ -228,6 +283,67 @@ No filename resolution or source evaluation is needed.
 - Symbolic links resolved through `abs_path()`
 - Repeated loading of the same canonical file reuses its package
 - A new object constructed on every successful invocation
+
+---
+
+### `note_to_pitch($note)`
+
+Converts a note name with octave number into a semitone offset
+relative to middle C (`C4 = 0`).
+
+**Examples:**
+
+| Input | Result |
+|---|---:|
+| `C4` | `0` |
+| `E4` | `4` |
+| `F#3` | `-6` |
+| `Bb3` | `-2` |
+
+**Accepted notation:**
+
+- Letters A through G, case-insensitive
+- Optional `#` or `b` accidental
+- Required integer octave, including negative octaves
+- No embedded spaces
+
+**Return:** Numeric semitone offset, or `undef` for invalid input
+
+---
+
+### `ourcls($short_package_name)`
+
+Loads a module from the `Pl_MIDI_Gen::` namespace using Perl's
+normal `require` mechanism, without constructing an object.
+
+**Behavior:**
+
+- Requires bartender initialization
+- Requires exactly one argument
+- Rejects references and invalid package names
+- Prepends `Pl_MIDI_Gen::` to the supplied name
+- Returns the fully qualified package name on success
+- Returns `undef` on validation or loading failure
+
+---
+
+### `save_file($data, $filename)`
+
+Writes the supplied data to a file in raw binary mode,
+overwriting an existing file when necessary.
+
+**Requirements and behavior:**
+
+- `$data` must be defined
+- The containing directory must already exist
+- Both writing and closing are checked for failure
+
+**Return values:**
+
+| Result | Return |
+|---|---|
+| Success | `{ 'ok' => 1 }` |
+| Failure | `{ 'ok' => 0 }` |
 
 ## Common constructor contract
 
