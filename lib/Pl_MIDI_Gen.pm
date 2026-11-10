@@ -191,14 +191,26 @@ sub fscplug {
   my $lc_code;
   my $lc_load_error;
   my $lc_dirname;
+  my $lc_visname; # Legibility add-on to package name
 
   $this = shift(@_);
 
   if ( !$initialized ) { return undef; }
+  $lc_visname = undef;
 
   $lc_plugin = shift(@_);
 
   if ( !defined($lc_plugin) ) { return undef; }
+  
+  # Just in case a visibility add-on was provided,
+  # get it.
+  if ( ( ref($lc_plugin) eq 'ARRAY' ) && ( !blessed($lc_plugin) ) )
+  {
+    my $lc2_a;
+    $lc2_a = $lc_plugin;
+    ($lc_plugin,$lc_visname) = @$lc2_a;
+    if ( defined($lc_visname) && ( $lc_visname !~ /\A[A-Za-z0-9_]+(?:::[A-Za-z0-9_]+)*\z/ ) ) { $lc_visname = undef; }
+  }
 
   # A blessed object already identifies a loaded class, without
   # requiring a constructor call or any file processing.
@@ -247,6 +259,10 @@ sub fscplug {
   # Allocate a new package before evaluation, so a failed eval
   # cannot lead to a reused, partially populated namespace.
   $lc_package = $external_namespace . '::a_' . $next_external_number . '_z';
+  if ( defined($lc_visname) )
+  {
+    $lc_package .= ( '::' . $lc_visname );
+  }
 
   $next_external_number = int($next_external_number + 1.2);
 
