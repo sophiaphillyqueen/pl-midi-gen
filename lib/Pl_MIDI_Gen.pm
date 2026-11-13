@@ -73,6 +73,68 @@ sub new {
 }
 
 
+
+sub find_bundle {
+  # Locate an installed MDGN bundle by name.
+  #
+  # For each bin directory in PATH, examine its
+  # sibling mdgn directory for the requested bundle.
+  #
+  # A bundle is recognized by the presence of
+  # its pack-data.json file.
+  #
+  # Returns the canonical absolute pathname of the
+  # first matching bundle directory, or undef if
+  # the bundle cannot be found.
+
+  my $this;
+  my $lc_name;
+  my $lc_path;
+  my $lc_candidate;
+  my $lc_result;
+
+  $this = shift(@_);
+  $lc_name = shift(@_);
+
+  # Reject invalid bundle names.
+  if ( !defined($lc_name) || ref($lc_name) )
+  {
+    return undef;
+  }
+
+  if ( $lc_name eq '' || $lc_name eq '.' || $lc_name eq '..'
+       || $lc_name =~ m{[/\x00]} )
+  {
+    return undef;
+  }
+
+  # Search each eligible PATH entry in order.
+  foreach $lc_path (split(/:/,($ENV{'PATH'} // '')))
+  {
+    # Only consider directories named bin.
+    if ( $lc_path !~ m{(?:\A|/)bin/*\z} ) { next; }
+
+    # Construct the corresponding bundle directory.
+    $lc_candidate = dirname($lc_path) . '/mdgn/' . $lc_name;
+
+    # The marker must be present.
+    if ( !-f "$lc_candidate/pack-data.json" ) { next; }
+
+    # Resolve the candidate to an absolute pathname.
+    $lc_result = abs_path($lc_candidate);
+
+    if ( defined($lc_result) && -d $lc_result )
+    {
+      return $lc_result;
+    }
+  }
+
+  # No matching bundle was found.
+  return undef;
+}
+
+
+
 sub fromus {
   # Load a plug-in from Pl_MIDI_Gen's own module namespace.
   #
