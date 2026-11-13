@@ -300,7 +300,11 @@ sub fscplug {
     $lc_load_error = $@;
   }
 
-  if ( $lc_load_error ne '' ) { return undef; }
+  if ( $lc_load_error ne '' )
+  {
+    warn $lc_load_error;
+    return undef;
+  }
 
   # Only successful compilation enters the shared registry.
   $external_packages{$lc_filename} = $lc_package;
