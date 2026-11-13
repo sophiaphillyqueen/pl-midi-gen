@@ -134,6 +134,56 @@ sub find_bundle {
 }
 
 
+sub find_this_bundle {
+  # Given a filename or directory name, locate the
+  # MDGN bundle containing it.
+  #
+  # Resolves symbolic links using abs_path().
+  # Searches upward through directories until it finds
+  # a pack-data.json marker.
+  #
+  # Returns the absolute pathname of the containing
+  # bundle directory, or undef if none is found.
+  #
+  # Can be invoked through either a bartender object
+  # or the bartender class itself.
+
+  my $this;
+  my $lc_source;
+  my $lc_dir;
+  my $lc_parent;
+
+  $this = shift(@_);
+  $lc_source = shift(@_);
+
+  # Reject invalid arguments.
+  if ( !defined($lc_source) || ref($lc_source) || $lc_source eq '' )
+  {
+    return undef;
+  }
+
+  # Resolve the path, including any symbolic links.
+  $lc_dir = abs_path($lc_source);
+  if ( !defined($lc_dir) ) { return undef; }
+
+
+  # Search upward until a bundle marker is found
+  # or the filesystem root is reached.
+  while ( 1 )
+  {
+    if ( -f "$lc_dir/pack-data.json" )
+    {
+      return $lc_dir;
+    }
+    
+    # Go up a directory, and admit failure if you
+    # can't do that.
+    $lc_parent = dirname($lc_dir);
+    if ( $lc_parent eq $lc_dir ) { return undef; }
+    $lc_dir = $lc_parent;
+  }
+}
+
 
 sub fromus {
   # Load a plug-in from Pl_MIDI_Gen's own module namespace.
