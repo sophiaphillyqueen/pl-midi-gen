@@ -184,6 +184,24 @@ sub find_this_bundle {
   }
 }
 
+sub find_nst_bundle {
+  # Does the same thing as `find_this_bundle`, except
+  # that if the argument provided to it is a directory
+  # that _itself_ qualifies as a bundle, it looks for
+  # a further-up bundle in which the current one is
+  # _nested_.
+  my $this;
+  my $lc_tbund;
+  my $lc_ubund;
+  $this = shift(@_);
+  $lc_tbund = abs_path(shift(@_));
+  if ( !defined($lc_tbund) ) { return undef; }
+  $lc_ubund = find_this_bundle(dirname($lc_tbund));
+  if ( !defined($lc_ubund) ) { return undef; }
+  if ( $lc_ubund eq $lc_tbund ) { return undef; }
+  return $lc_ubund;
+}
+
 
 sub fromus {
   # Load a plug-in from Pl_MIDI_Gen's own module namespace.
