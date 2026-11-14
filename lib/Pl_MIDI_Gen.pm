@@ -212,6 +212,23 @@ sub find_nst_bundle {
   return $lc_ubund;
 }
 
+sub find_home {
+  my $this;
+  my $lc_hm;
+  $this = shift(@_);
+  
+  # Try the environment.
+  $lc_hm = $ENV{'HOME'};
+  if ( $lc_hm ) { return $lc_hm; }
+  
+  # Try the user database.
+  $lc_hm = (getpwuid($<))[7];
+  if ( $lc_hm ) { return $lc_hm; }
+  
+  # Sorry it didn't work.
+  return undef;
+}
+
 
 sub fromus {
   # Load a plug-in from Pl_MIDI_Gen's own module namespace.
