@@ -77,8 +77,12 @@ sub new {
 sub find_bundle {
   # Locate an installed MDGN bundle by name.
   #
-  # For each bin directory in PATH, examine its
-  # sibling mdgn directory for the requested bundle.
+  # For each `bin` directory in PATH, examine its
+  # niece `lib/mdgn` directory for the requested bundle.
+  # If after all that, the bundle isn't found, then
+  # (for legacy sake) it goes through the PATH again
+  # checking each `bin` directory's sibling `mdgn`
+  # directory for the requested bundle.
   #
   # A bundle is recognized by the presence of
   # its pack-data.json file.
@@ -108,7 +112,28 @@ sub find_bundle {
     return undef;
   }
 
-  # Search each eligible PATH entry in order.
+  # Search each eligible PATH entry in order for '$/lib/mdgn'.
+  foreach $lc_path (split(/:/,($ENV{'PATH'} // '')))
+  {
+    # Only consider directories named bin.
+    if ( $lc_path !~ m{(?:\A|/)bin/*\z} ) { next; }
+
+    # Construct the corresponding bundle directory.
+    $lc_candidate = dirname($lc_path) . '/lib/mdgn/' . $lc_name;
+
+    # The marker must be present.
+    if ( !-f "$lc_candidate/pack-data.json" ) { next; }
+
+    # Resolve the candidate to an absolute pathname.
+    $lc_result = abs_path($lc_candidate);
+
+    if ( defined($lc_result) && -d $lc_result )
+    {
+      return $lc_result;
+    }
+  }
+
+  # Search each eligible PATH entry in order for '$/mdgn'.
   foreach $lc_path (split(/:/,($ENV{'PATH'} // '')))
   {
     # Only consider directories named bin.

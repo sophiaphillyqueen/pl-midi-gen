@@ -42,13 +42,13 @@ sub do_install {
     {
       if ( $lc_each eq "$lc_home/.local/bin" )
       {
-        $lc_prefix = "$lc_home/.local/mdgn";
+        $lc_prefix = "$lc_home/.local/lib/mdgn";
         last;
       }
     
       if ( $lc_each eq "$lc_home/local/bin" )
       {
-        $lc_prefix = "$lc_home/local/mdgn";
+        $lc_prefix = "$lc_home/local/lib/mdgn";
         last;
       }
     }
