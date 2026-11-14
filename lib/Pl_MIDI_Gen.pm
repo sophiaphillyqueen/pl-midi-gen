@@ -191,10 +191,20 @@ sub find_nst_bundle {
   # a further-up bundle in which the current one is
   # _nested_.
   my $this;
+  my $lc_rarg;
   my $lc_tbund;
   my $lc_ubund;
+  
+  # Get argumentary
   $this = shift(@_);
-  $lc_tbund = abs_path(shift(@_));
+  $lc_rarg = shift(@_);
+  
+  # Make sure I was actually given the argument.
+  if ( !(defined($lc_rarg)) ) { return undef; }
+  if ( reftype($lc_rarg) ) { return undef; }
+  if ( $lc_rarg eq '' ) { return undef; }
+  
+  $lc_tbund = abs_path($lc_rarg);
   if ( !defined($lc_tbund) ) { return undef; }
   $lc_ubund = find_this_bundle(dirname($lc_tbund));
   if ( !defined($lc_ubund) ) { return undef; }
