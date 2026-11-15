@@ -22,7 +22,7 @@ use warnings;
 our $VERSION = '0.01_00';
 
 use Cwd qw(abs_path);
-use Scalar::Util qw(blessed);
+use Scalar::Util qw(blessed reftype);
 use File::Basename qw(dirname);
 
 # All state belongs to the class, not to an individual
