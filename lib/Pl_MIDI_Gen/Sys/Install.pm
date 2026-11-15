@@ -15,6 +15,8 @@ sub do_install {
   my $lc_packd;
   my $lc_pknom;
   my $lc_args;
+  my $lc_stage; # Stage location
+  my $lc_stgd;  # Is the stage location specified?
   
   $this = shift(@_);
   $lc_args = [@_];
@@ -23,17 +25,37 @@ sub do_install {
   $lc_home = $ENV{'HOME'};
   $lc_path = $ENV{'PATH'} // '';
   
-  $lc_prefix = undef;
-  
   if ( !defined($lc_home) || $lc_home eq '' )
   {
     die "Cannot select MDGN installation prefix: HOME is not set.\n";
   }
   
+  $lc_prefix = undef;
+  $lc_stage = undef;
+  
   GetOptionsFromArray(
     $lc_args,
+    'stage=s'  => \$lc_stage,
     'mdgn_dir=s'  => \$lc_prefix,
   ) or die("Invalid installation options.\n");
+  
+  # Was the stage specified?
+  $lc_stgd = 1;
+  if ( !(defined($lc_stage)) )
+  {
+    $lc_stgd = 0;
+    $lc_stage = '';
+  }
+  
+  # If the stage location is set, that changes the
+  # default location of the prefix.
+  if ( !defined($lc_prefix) )
+  {
+    if ( $lc_stgd )
+    {
+      $lc_prefix = '/usr/lib/mdgn';
+    }
+  }
   
   # Search PATH in order, stopping at the first match.
   if ( !defined($lc_prefix) )
