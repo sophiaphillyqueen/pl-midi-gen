@@ -378,6 +378,14 @@ sub new
     {
       return undef;
     }
+  } else {
+    my $lc2_call;
+    $lc2_call = [caller(0)];
+    warn("\nPlease specify a \'tpb\' option.\n"
+      . '  ' . $lc2_call->[1] . ' : line '
+      . $lc2_call->[2] . "\n\n"
+    );
+    sleep(5);
   }
 
   # Initially, individual pitch bending is disabled.
