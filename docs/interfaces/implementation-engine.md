@@ -48,7 +48,7 @@ General options established so far:
 | `gbend_down` | Global downward pitch-bend range in semitones |
 | `gbend_prt` | Whether out-of-range global bends proceed partway |
 | `engopt` | Optional hashref of engine-specific options |
-| `tpb` | The number of ticks per beat. (The default is 480.) |
+| `tpb` | The number of ticks per beat. (For legacy sake default is still 480 -- but there will be an obnoxious warning if you don't actually _specify_ this option, and a multiple of 64 is recommended.) |
 
 Both `bend_up` and `bend_down` must be supplied to enable
 fractional-pitch functionality.
