@@ -18,6 +18,7 @@ package Pl_MIDI_Gen;
 
 use strict;
 use warnings;
+use JSON::PP qw(decode_json);
 
 our $VERSION = '0.01_00';
 
@@ -587,6 +588,145 @@ sub note_to_pitch
 
   return $lc_pitch;
 }
+
+
+
+sub load_json
+{
+  # Load a JSON file and return its decoded contents.
+  # The filename is the sole argument, and relative
+  # filenames are resolved against the current working
+  # directory.
+  #
+  # On success, return a hashref containing:
+  #   'ok'  => 1
+  #   'val' => the decoded JSON value
+  #
+  # On failure, report the error to STDERR, identifying
+  # the calling source file and line number, and return
+  # a hashref containing only 'ok' => 0.
+  #
+  # JSON scalar roots, including null, are permitted.
+
+  my $this;
+  my $lc_filename;
+  my $lc_fh;
+  my $lc_json;
+  my $lc_chunk;
+  my $lc_read;
+  my $lc_value;
+  my $lc_error;
+  my $lc_caller_file;
+  my $lc_caller_line;
+
+  $this = shift(@_);
+  $lc_filename = shift(@_);
+
+  # Identify the source location that called this method.
+  (undef, $lc_caller_file, $lc_caller_line) = caller(0);
+
+  # Reject an invalid filename argument.
+  if ( !defined($lc_filename) || ref($lc_filename) || $lc_filename eq '' )
+  {
+    print STDERR "$lc_caller_file line $lc_caller_line: load_json: Invalid filename.\n";
+    return { 'ok' => 0 };
+  }
+
+  # Open the JSON file for reading raw bytes.
+  if ( !open($lc_fh, '<:raw', $lc_filename) )
+  {
+    print STDERR "$lc_caller_file line $lc_caller_line: load_json: Cannot open '$lc_filename': $!\n";
+    return { 'ok' => 0 };
+  }
+
+  # Read the file, checking for errors while reading.
+  $lc_json = '';
+
+  while ( 1 )
+  {
+    $lc_read = read($lc_fh, $lc_chunk, 65536);
+
+    if ( !defined($lc_read) )
+    {
+      $lc_error = "$!";
+      close($lc_fh);
+      print STDERR "$lc_caller_file line $lc_caller_line: load_json: Cannot read '$lc_filename': $lc_error\n";
+      return { 'ok' => 0 };
+    }
+
+    if ( $lc_read == 0 ) { last; }
+
+    $lc_json .= $lc_chunk;
+  }
+
+  # Check for errors closing the file.
+  if ( !close($lc_fh) )
+  {
+    print STDERR "$lc_caller_file line $lc_caller_line: load_json: Cannot close '$lc_filename': $!\n";
+    return { 'ok' => 0 };
+  }
+
+  # Decode the JSON, trapping malformed input.
+  $lc_value = eval { decode_json($lc_json) };
+
+  if ( $@ )
+  {
+    $lc_error = $@;
+    $lc_error =~ s/\s+\z//;
+    print STDERR "$lc_caller_file line $lc_caller_line: load_json: Cannot decode '$lc_filename': $lc_error\n";
+    return { 'ok' => 0 };
+  }
+
+  # Return the decoded value, regardless of its type.
+  return { 'ok' => 1, 'val' => $lc_value };
+}
+
+
+
+
+sub ref_get
+{
+  # Safely traverse a nested Perl data structure.
+  #
+  # The first argument is any Perl value.
+  # Subsequent arguments identify hash keys or array indices,
+  # depending on the reference type encountered at each stage.
+  #
+  # Return undef if traversal cannot continue, or return the
+  # final value unchanged when all arguments are consumed.
+  #
+  # This method never modifies or autovivifies the structure.
+
+  my $this;
+  my $lc_value;
+  my $lc_step;
+
+  $this = shift(@_);
+  $lc_value = shift(@_);
+
+  foreach $lc_step (@_)
+  {
+    if ( ( reftype($lc_value) // '' ) eq 'HASH' )
+    {
+      if ( !exists($lc_value->{$lc_step}) ) { return undef; }
+      $lc_value = $lc_value->{$lc_step};
+    }
+    elsif ( ( reftype($lc_value) // '' ) eq 'ARRAY' )
+    {
+      if ( !defined($lc_step) || $lc_step !~ /^[0-9]+$/ ) { return undef; }
+      if ( $lc_step >= scalar(@$lc_value) ) { return undef; }
+      $lc_value = $lc_value->[$lc_step];
+    }
+    else
+    {
+      return undef;
+    }
+  }
+
+  return $lc_value;
+}
+
+
 
 
 
