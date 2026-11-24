@@ -238,6 +238,30 @@ sub find_nst_bundle {
   return $lc_ubund;
 }
 
+sub extract_hashref {
+  # Find and remove the first ordinary hashref from
+  # the supplied arrayref, preserving the order of
+  # all remaining elements.
+  # Return undef if no hashref is found.
+  
+  my $this;
+  my $lc_args;
+  my $lc_idx;
+  
+  $this = shift(@_);
+  $lc_args = shift(@_);
+  
+  for ( $lc_idx = 0; $lc_idx < scalar(@$lc_args); $lc_idx++ )
+  {
+    if ( ref($lc_args->[$lc_idx]) eq 'HASH' )
+    {
+      return splice(@$lc_args, $lc_idx, 1);
+    }
+  }
+  
+  return undef;
+}
+
 sub find_home {
   my $this;
   my $lc_hm;
