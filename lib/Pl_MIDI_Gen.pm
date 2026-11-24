@@ -239,8 +239,8 @@ sub find_nst_bundle {
 }
 
 sub extract_hashref {
-  # Find and remove the first ordinary hashref from
-  # the supplied arrayref, preserving the order of
+  # Find and remove the first hashref from the
+  # supplied arrayref, preserving the order of
   # all remaining elements.
   # Return undef if no hashref is found.
   
@@ -253,7 +253,7 @@ sub extract_hashref {
   
   for ( $lc_idx = 0; $lc_idx < scalar(@$lc_args); $lc_idx++ )
   {
-    if ( ref($lc_args->[$lc_idx]) eq 'HASH' )
+    if ( ( reftype($lc_args->[$lc_idx]) // '' ) eq 'HASH' )
     {
       return splice(@$lc_args, $lc_idx, 1);
     }
